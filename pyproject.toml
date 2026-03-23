@@ -1,0 +1,33 @@
+[project]
+name = "revettr"
+version = "0.1.0"
+description = "Counterparty risk scoring for agentic commerce"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{name = "L Squared Digital Holdings"}]
+keywords = ["x402", "risk-scoring", "agentic-commerce", "counterparty-risk", "base"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+]
+dependencies = [
+    "httpx>=0.28.0",
+]
+
+[project.optional-dependencies]
+x402 = [
+    "x402[httpx,evm]>=2.5.0",
+]
+
+[project.urls]
+Homepage = "https://revettr.com"
+Repository = "https://github.com/AlexanderLawson17/revettr-python"
+Documentation = "https://revettr.com/docs"
