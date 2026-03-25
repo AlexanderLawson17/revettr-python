@@ -181,8 +181,6 @@ async with SafeX402Client(
 | `"warn"` | Log warning, proceed with payment |
 | `"log"` | Silently log, proceed with payment |
 
-> **Security**: Never hardcode private keys. Use environment variables or a secrets manager in production.
-
 ## Pricing
 
 | Tier | Price | What You Get |
