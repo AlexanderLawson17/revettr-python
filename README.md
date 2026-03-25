@@ -156,6 +156,33 @@ score = client.score(wallet_address="0xabc...")
 
 > **Security**: Never hardcode private keys. Use environment variables or a secrets manager in production.
 
+## Safe Agent Payments
+
+Drop-in replacement for x402 payments that automatically checks counterparty risk before sending money. If the counterparty scores below your threshold, the payment is blocked.
+
+```python
+from revettr import SafeX402Client, PaymentBlocked
+
+async with SafeX402Client(
+    wallet_private_key="0x...",
+    min_score=60,    # Block "high" and "critical" risk
+    on_fail="block", # Raise PaymentBlocked (default)
+) as http:
+    try:
+        # Automatically scores the counterparty before paying
+        response = await http.post("https://some-api.com/endpoint", json=data)
+    except PaymentBlocked as e:
+        print(f"Blocked: {e.url} scored {e.score}/100")
+```
+
+| `on_fail` | Behavior |
+|-----------|----------|
+| `"block"` (default) | Raise `PaymentBlocked` exception |
+| `"warn"` | Log warning, proceed with payment |
+| `"log"` | Silently log, proceed with payment |
+
+> **Security**: Never hardcode private keys. Use environment variables or a secrets manager in production.
+
 ## Pricing
 
 | Tier | Price | What You Get |
