@@ -70,8 +70,13 @@ async def score_counterparty(
             if not isinstance(domain, str):
                 raise ValueError("domain must be a string")
             domain = domain.strip()
-            if len(domain) > 253:
-                raise ValueError("domain exceeds 253-character DNS limit")
+            hostname = domain
+            if "://" in domain:
+                from urllib.parse import urlparse
+                parsed = urlparse(domain)
+                hostname = parsed.hostname or domain
+            if len(hostname) > 253:
+                raise ValueError("domain hostname exceeds 253-character DNS limit")
             if re.search(r"\s", domain):
                 raise ValueError("domain must not contain whitespace")
 

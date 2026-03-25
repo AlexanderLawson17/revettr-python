@@ -90,8 +90,14 @@ class Revettr:
             if not isinstance(domain, str):
                 raise ValueError("domain must be a string")
             domain = domain.strip()
-            if len(domain) > 253:
-                raise ValueError("domain exceeds 253-character DNS limit")
+            # Extract hostname if input is a URL, then apply DNS limit
+            hostname = domain
+            if "://" in domain:
+                from urllib.parse import urlparse
+                parsed = urlparse(domain)
+                hostname = parsed.hostname or domain
+            if len(hostname) > 253:
+                raise ValueError("domain hostname exceeds 253-character DNS limit")
             if re.search(r"\s", domain):
                 raise ValueError("domain must not contain whitespace")
 
@@ -117,9 +123,13 @@ class Revettr:
         if amount is not None:
             if not isinstance(amount, (int, float)):
                 raise ValueError("amount must be a number")
-            if math.isnan(amount) or math.isinf(amount):
+            try:
+                amount_f = float(amount)
+            except (OverflowError, ValueError):
+                raise ValueError("amount is too large or not a valid number")
+            if math.isnan(amount_f) or math.isinf(amount_f):
                 raise ValueError("amount must be finite (not NaN or inf)")
-            if amount <= 0:
+            if amount_f <= 0:
                 raise ValueError("amount must be greater than 0")
 
         if email is not None:
