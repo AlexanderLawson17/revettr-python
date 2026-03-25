@@ -9,4 +9,4 @@ try:
 except ImportError:
     pass  # x402 dependencies not installed
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"

@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.AlexanderLawson17/revettr-mcp -->
 # Revettr
 
 Counterparty risk scoring for agentic commerce. One API call answers: **"Should this agent send money to this counterparty?"**
