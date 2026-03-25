@@ -4,6 +4,8 @@ Counterparty risk scoring for agentic commerce. One API call answers: **"Should 
 
 Revettr scores counterparties by analyzing domain intelligence, IP reputation, on-chain wallet history, and sanctions lists. It's designed for AI agents transacting via [x402](https://x402.org) on Base.
 
+[![revettr MCP server](https://glama.ai/mcp/servers/AlexanderLawson17/revettr-python/badges/card.svg)](https://glama.ai/mcp/servers/AlexanderLawson17/revettr-python)
+
 ## Install
 
 ```bash
