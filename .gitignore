@@ -8,3 +8,5 @@ build/
 .ruff_cache/
 .env
 .claude/
+.mcpregistry_*
+.smithery/
