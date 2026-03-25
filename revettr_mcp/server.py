@@ -12,6 +12,21 @@ from fastmcp import FastMCP
 
 REVETTR_URL = os.getenv("REVETTR_URL", "https://revettr.com")
 
+
+def _validate_url(url: str) -> None:
+    """Ensure URL uses HTTPS (allow HTTP only for localhost)."""
+    if url.startswith("https://"):
+        return
+    if url.startswith("http://localhost") or url.startswith("http://127.0.0.1"):
+        return
+    raise ValueError(
+        f"REVETTR_URL must use HTTPS (got {url!r}). "
+        "HTTP is only allowed for localhost/127.0.0.1 during development."
+    )
+
+
+_validate_url(REVETTR_URL)
+
 mcp = FastMCP(
     "Revettr",
     instructions=(
@@ -91,14 +106,14 @@ async def _call_with_x402_payment(body: dict, wallet_key: str) -> dict:
             elif response.status_code == 402:
                 return {"error": "Payment failed — check wallet balance", "status": 402}
             else:
-                return {"error": f"API returned {response.status_code}", "body": response.text[:200]}
+                return {"error": f"API returned status {response.status_code}"}
 
     except ImportError:
         return {
             "error": "x402 payment dependencies not installed. Run: pip install revettr[x402]",
         }
-    except Exception as e:
-        return {"error": f"Payment failed: {str(e)}"}
+    except Exception:
+        return {"error": "Payment failed — an unexpected error occurred"}
 
 
 async def _call_direct(body: dict) -> dict:
@@ -115,4 +130,4 @@ async def _call_direct(body: dict) -> dict:
                 "pricing": "$0.01 USDC per request via x402 on Base",
             }
         else:
-            return {"error": f"API returned {response.status_code}", "body": response.text[:200]}
+            return {"error": f"API returned status {response.status_code}"}

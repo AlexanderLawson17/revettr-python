@@ -77,8 +77,8 @@ Send any combination of inputs. More data = higher confidence.
       "flags": [],
       "available": true,
       "details": {
-        "alchemy": {"tx_count": 100, "unique_counterparties": 29},
-        "rpc": {"nonce": 16, "eth_balance": 0.072}
+        "blockchain": {"tx_count": 100, "unique_counterparties": 29},
+        "onchain": {"nonce": 16, "eth_balance": 0.072}
       }
     }
   },
@@ -103,28 +103,16 @@ A score of **0** means a hard match (e.g., exact sanctions hit). This overrides 
 
 ## Risk Flags
 
-Flags tell you exactly what triggered a score reduction:
+Flags tell you exactly what triggered a score reduction. They are grouped by signal category:
 
-| Flag | Signal | Meaning |
-|------|--------|---------|
-| `domain_age_under_7_days` | Domain | Domain registered less than 7 days ago |
-| `domain_age_under_30_days` | Domain | Domain registered less than 30 days ago |
-| `no_mx_records` | Domain | Domain has no email server configured |
-| `no_spf_record` | Domain | No SPF email authentication |
-| `ssl_invalid_or_expired` | Domain | SSL certificate is invalid or expired |
-| `ssl_self_signed` | Domain | Self-signed SSL certificate |
-| `tor_exit_node` | IP | IP is a known Tor exit node |
-| `known_vpn` | IP | IP belongs to a known VPN provider |
-| `datacenter_ip` | IP | IP is from a datacenter (not residential) |
-| `high_risk_country_XX` | IP | IP geolocates to a sanctioned country |
-| `wallet_never_transacted` | Wallet | Wallet has zero transactions (nonce = 0) |
-| `wallet_created_today` | Wallet | Wallet's first transaction was today |
-| `wallet_age_under_7_days` | Wallet | Wallet is less than 7 days old |
-| `wallet_few_counterparties` | Wallet | Wallet has interacted with fewer than 3 addresses |
-| `wallet_mixer_exposure` | Wallet | Wallet has interacted with known mixers |
-| `wallet_sanctioned` | Wallet | Wallet appears on a sanctions list |
-| `sanctions_exact_match` | Sanctions | Exact name match on OFAC/EU/UN sanctions list |
-| `sanctions_high_confidence_match` | Sanctions | High confidence fuzzy match on sanctions list |
+| Category | Examples | What It Covers |
+|----------|----------|----------------|
+| Domain | `domain_age_under_*`, `no_mx_records`, `ssl_*` | Domain age, DNS hygiene, SSL validity |
+| IP | `tor_exit_node`, `known_vpn`, `high_risk_country_*` | Anonymization, geolocation risk |
+| Wallet | `wallet_never_transacted`, `wallet_age_under_*` | On-chain history, activity patterns |
+| Sanctions | `sanctions_exact_match`, `sanctions_high_confidence_match` | OFAC/EU/UN sanctions screening |
+
+The full set of flags and their descriptions are returned in the API response. Flag names are stable and machine-readable.
 
 ## Usage Examples
 

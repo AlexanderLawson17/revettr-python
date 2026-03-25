@@ -26,16 +26,34 @@ class Revettr:
         timeout: float = 30.0,
     ):
         self.base_url = (base_url or self.DEFAULT_URL).rstrip("/")
+        self._validate_base_url(self.base_url)
         self.timeout = timeout
-        self._wallet_private_key = wallet_private_key
         self._http_client: httpx.Client | None = None
         self._x402_client = None
 
         if wallet_private_key:
-            self._setup_x402()
+            self._setup_x402(wallet_private_key)
 
-    def _setup_x402(self):
-        """Set up x402 auto-payment client."""
+    def __repr__(self) -> str:
+        return (
+            f"Revettr(base_url={self.base_url!r}, "
+            f"x402={'enabled' if self._x402_client else 'disabled'})"
+        )
+
+    @staticmethod
+    def _validate_base_url(url: str) -> None:
+        """Ensure base_url uses HTTPS (allow HTTP only for localhost)."""
+        if url.startswith("https://"):
+            return
+        if url.startswith("http://localhost") or url.startswith("http://127.0.0.1"):
+            return
+        raise ValueError(
+            f"base_url must use HTTPS (got {url!r}). "
+            "HTTP is only allowed for localhost/127.0.0.1 during development."
+        )
+
+    def _setup_x402(self, wallet_private_key: str):
+        """Set up x402 auto-payment client. Does not store the raw key."""
         try:
             from eth_account import Account
             from x402 import x402Client
@@ -43,7 +61,7 @@ class Revettr:
             from x402.mechanisms.evm import EthAccountSigner
             from x402.mechanisms.evm.exact.register import register_exact_evm_client
 
-            account = Account.from_key(self._wallet_private_key)
+            account = Account.from_key(wallet_private_key)
             client = x402Client()
             register_exact_evm_client(client, EthAccountSigner(account))
             self._x402_client = client
