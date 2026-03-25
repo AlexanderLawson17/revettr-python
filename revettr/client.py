@@ -1,5 +1,9 @@
 """Revettr Python client — counterparty risk scoring for agentic commerce."""
 
+import ipaddress
+import math
+import re
+
 import httpx
 
 from revettr.models import ScoreResponse
@@ -71,6 +75,68 @@ class Revettr:
                 "Install with: pip install revettr[x402]"
             )
 
+    @staticmethod
+    def _validate_inputs(
+        domain: str | None,
+        ip: str | None,
+        wallet_address: str | None,
+        chain: str,
+        company_name: str | None,
+        email: str | None,
+        amount: float | None,
+    ) -> None:
+        """Validate inputs before sending to the API (defense-in-depth)."""
+        if domain is not None:
+            if not isinstance(domain, str):
+                raise ValueError("domain must be a string")
+            domain = domain.strip()
+            if len(domain) > 253:
+                raise ValueError("domain exceeds 253-character DNS limit")
+            if re.search(r"\s", domain):
+                raise ValueError("domain must not contain whitespace")
+
+        if ip is not None:
+            try:
+                ipaddress.ip_address(ip)
+            except ValueError:
+                raise ValueError(f"Invalid IP address: {ip!r}")
+
+        if wallet_address is not None:
+            if not re.match(r"^0x[a-fA-F0-9]{40}$", wallet_address):
+                raise ValueError(
+                    f"Invalid EVM wallet address: {wallet_address!r}. "
+                    "Expected format: 0x followed by 40 hex characters."
+                )
+
+        if company_name is not None:
+            if not isinstance(company_name, str):
+                raise ValueError("company_name must be a string")
+            if len(company_name.strip()) > 200:
+                raise ValueError("company_name exceeds 200-character limit")
+
+        if amount is not None:
+            if not isinstance(amount, (int, float)):
+                raise ValueError("amount must be a number")
+            if math.isnan(amount) or math.isinf(amount):
+                raise ValueError("amount must be finite (not NaN or inf)")
+            if amount <= 0:
+                raise ValueError("amount must be greater than 0")
+
+        if email is not None:
+            if not isinstance(email, str):
+                raise ValueError("email must be a string")
+            if len(email) > 254:
+                raise ValueError("email exceeds 254-character limit")
+            at_pos = email.find("@")
+            if at_pos == -1 or "." not in email[at_pos + 1 :]:
+                raise ValueError(f"Invalid email address: {email!r}")
+
+        if chain is not None:
+            if not isinstance(chain, str) or not chain.strip():
+                raise ValueError("chain must be a non-empty string")
+            if len(chain) > 50:
+                raise ValueError("chain exceeds 50-character limit")
+
     def score(
         self,
         domain: str | None = None,
@@ -98,7 +164,16 @@ class Revettr:
         Raises:
             RevettrPaymentRequired: If no x402 wallet is configured and payment is needed
             RevettrError: If the API returns an error
+            ValueError: If any input fails validation
         """
+        self._validate_inputs(domain, ip, wallet_address, chain, company_name, email, amount)
+
+        # Strip whitespace from string inputs after validation
+        if domain is not None:
+            domain = domain.strip()
+        if company_name is not None:
+            company_name = company_name.strip()
+
         body = {}
         if domain is not None:
             body["domain"] = domain

@@ -154,6 +154,8 @@ client = Revettr(
 score = client.score(wallet_address="0xabc...")
 ```
 
+> **Security**: Never hardcode private keys. Use environment variables or a secrets manager in production.
+
 ## Pricing
 
 | Tier | Price | What You Get |
