@@ -5,7 +5,10 @@ Claude Desktop, Cursor, and Windsurf can call score_counterparty
 as a native tool.
 """
 
+import ipaddress
+import math
 import os
+import re
 
 import httpx
 from fastmcp import FastMCP
@@ -61,6 +64,50 @@ async def score_counterparty(
     Returns:
         Risk assessment with score (0-100), tier, confidence, flags, and per-signal breakdown.
     """
+    # --- Input validation (return error dicts instead of raising) ---
+    try:
+        if domain is not None:
+            if not isinstance(domain, str):
+                raise ValueError("domain must be a string")
+            domain = domain.strip()
+            hostname = domain
+            if "://" in domain:
+                from urllib.parse import urlparse
+                parsed = urlparse(domain)
+                hostname = parsed.hostname or domain
+            if len(hostname) > 253:
+                raise ValueError("domain hostname exceeds 253-character DNS limit")
+            if re.search(r"\s", domain):
+                raise ValueError("domain must not contain whitespace")
+
+        if ip is not None:
+            try:
+                ipaddress.ip_address(ip)
+            except ValueError:
+                raise ValueError(f"Invalid IP address: {ip!r}")
+
+        if wallet_address is not None:
+            if not re.match(r"^0x[a-fA-F0-9]{40}$", wallet_address):
+                raise ValueError(
+                    f"Invalid EVM wallet address: {wallet_address!r}. "
+                    "Expected format: 0x followed by 40 hex characters."
+                )
+
+        if company_name is not None:
+            if not isinstance(company_name, str):
+                raise ValueError("company_name must be a string")
+            company_name = company_name.strip()
+            if len(company_name) > 200:
+                raise ValueError("company_name exceeds 200-character limit")
+
+        if chain is not None:
+            if not isinstance(chain, str) or not chain.strip():
+                raise ValueError("chain must be a non-empty string")
+            if len(chain) > 50:
+                raise ValueError("chain exceeds 50-character limit")
+    except ValueError as e:
+        return {"error": str(e)}
+
     body = {}
     if domain is not None:
         body["domain"] = domain
