@@ -157,6 +157,25 @@ score = client.score(wallet_address="0xabc...")
 
 > **Security**: Never hardcode private keys. Use environment variables or a secrets manager in production.
 
+### With Virtuals Protocol (ACP)
+
+Score seller agents before creating jobs on the [Agent Commerce Protocol](https://app.virtuals.io/acp):
+
+```python
+from revettr import Revettr
+
+client = Revettr()
+result = client.score(wallet_address=seller_wallet)
+if result.score >= 60:
+    # Safe to create ACP job
+    job_id = chosen_offering.initiate_job(
+        service_requirement={"task": "Analyze Q1 sales data"},
+        evaluator_address=evaluator_address,
+    )
+```
+
+See [examples/virtuals_acp_safe_buyer.py](examples/virtuals_acp_safe_buyer.py) for the full buyer agent flow.
+
 ## Safe Agent Payments
 
 Drop-in replacement for x402 payments that automatically checks counterparty risk before sending money. If the counterparty scores below your threshold, the payment is blocked.
