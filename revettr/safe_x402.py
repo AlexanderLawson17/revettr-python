@@ -22,6 +22,17 @@ class PaymentBlocked(Exception):
         )
 
 
+class RevettrCheckError(Exception):
+    """Raised when fail_closed=True and the Revettr risk check cannot be completed."""
+
+    def __init__(self, domain: str, reason: str):
+        self.domain = domain
+        self.reason = reason
+        super().__init__(
+            f"Revettr check failed for {domain} (fail_closed=True): {reason}"
+        )
+
+
 class SafeX402Client:
     """Drop-in x402 payment client that checks counterparty risk before paying.
 
@@ -45,6 +56,11 @@ class SafeX402Client:
             - "log": Silently log and proceed
         revettr_url: Revettr API URL (default: https://revettr.com)
         timeout: HTTP timeout in seconds (default: 60.0)
+        fail_closed: If True, raise RevettrCheckError when the Revettr API is
+            unreachable or returns a non-200 status, instead of silently
+            proceeding with payment. Default is False for backwards
+            compatibility. Security-conscious deployments should set this to
+            True to prevent payments when risk cannot be assessed.
     """
 
     def __init__(
@@ -55,6 +71,7 @@ class SafeX402Client:
         on_fail: str = "block",
         revettr_url: str = "https://revettr.com",
         timeout: float = 60.0,
+        fail_closed: bool = False,
     ):
         if on_fail not in ("block", "warn", "log"):
             raise ValueError(f"on_fail must be 'block', 'warn', or 'log', got {on_fail!r}")
@@ -65,6 +82,7 @@ class SafeX402Client:
         self._on_fail = on_fail
         self._revettr_url = revettr_url.rstrip("/")
         self._timeout = timeout
+        self._fail_closed = fail_closed
         self._checked_domains: dict[str, int] = {}  # Cache: domain -> score
 
         # Set up x402 client
@@ -112,6 +130,14 @@ class SafeX402Client:
         await response.aread()
         return response
 
+    def _cache_domain(self, domain: str, score: int) -> None:
+        """Cache a domain score, evicting the oldest entry if at capacity."""
+        if len(self._checked_domains) >= 1000:
+            # Remove oldest entry (first inserted key in insertion-ordered dict)
+            oldest = next(iter(self._checked_domains))
+            del self._checked_domains[oldest]
+        self._checked_domains[domain] = score
+
     async def _check_counterparty(self, url: str) -> None:
         """Score the target domain before allowing payment."""
         domain = urlparse(url).hostname
@@ -141,6 +167,8 @@ class SafeX402Client:
                     await resp.aread()
 
                 if resp.status_code != 200:
+                    if self._fail_closed:
+                        raise RevettrCheckError(domain, f"API returned status {resp.status_code}")
                     logger.warning("Revettr check failed (status %d) for %s — proceeding", resp.status_code, domain)
                     return
 
@@ -149,12 +177,16 @@ class SafeX402Client:
                 tier = data.get("tier", "unknown")
                 flags = data.get("flags", [])
 
+        except RevettrCheckError:
+            raise
         except Exception as e:
+            if self._fail_closed:
+                raise RevettrCheckError(domain, str(e)) from e
             logger.warning("Revettr check failed for %s: %s — proceeding", domain, e)
             return
 
-        # Cache the result
-        self._checked_domains[domain] = score
+        # Cache the result (bounded)
+        self._cache_domain(domain, score)
 
         if score >= self._min_score:
             logger.info("Counterparty check passed: %s scored %d/100 (%s)", domain, score, tier)

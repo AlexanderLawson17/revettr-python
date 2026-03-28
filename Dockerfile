@@ -9,6 +9,9 @@ COPY README.md .
 
 RUN pip install --no-cache-dir ".[mcp]"
 
+RUN useradd -r -s /bin/false appuser
+USER appuser
+
 ENV REVETTR_URL=https://revettr.com
 
 EXPOSE 8081

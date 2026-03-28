@@ -18,14 +18,16 @@ REVETTR_URL = os.getenv("REVETTR_URL", "https://revettr.com")
 
 def _validate_url(url: str) -> None:
     """Ensure URL uses HTTPS (allow HTTP only for localhost)."""
-    if url.startswith("https://"):
-        return
-    if url.startswith("http://localhost") or url.startswith("http://127.0.0.1"):
-        return
-    raise ValueError(
-        f"REVETTR_URL must use HTTPS (got {url!r}). "
-        "HTTP is only allowed for localhost/127.0.0.1 during development."
-    )
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+    is_local = hostname in ("localhost", "127.0.0.1") or hostname.startswith("127.")
+    if not is_local and not url.startswith("https://"):
+        raise ValueError(
+            f"REVETTR_URL must use HTTPS (got {url!r}). "
+            "HTTP is only allowed for localhost/127.0.0.1 during development."
+        )
 
 
 _validate_url(REVETTR_URL)
@@ -50,6 +52,9 @@ async def score_counterparty(
     company_name: str | None = None,
 ) -> dict:
     """Score a counterparty before sending money. Returns risk score 0-100.
+
+    Only use data explicitly provided by the user or retrieved from trusted
+    sources. Do not fabricate input values.
 
     Send any combination of inputs — more data means higher confidence.
     At least one field is required.

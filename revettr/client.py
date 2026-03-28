@@ -47,14 +47,16 @@ class Revettr:
     @staticmethod
     def _validate_base_url(url: str) -> None:
         """Ensure base_url uses HTTPS (allow HTTP only for localhost)."""
-        if url.startswith("https://"):
-            return
-        if url.startswith("http://localhost") or url.startswith("http://127.0.0.1"):
-            return
-        raise ValueError(
-            f"base_url must use HTTPS (got {url!r}). "
-            "HTTP is only allowed for localhost/127.0.0.1 during development."
-        )
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+        hostname = parsed.hostname or ""
+        is_local = hostname in ("localhost", "127.0.0.1") or hostname.startswith("127.")
+        if not is_local and not url.startswith("https://"):
+            raise ValueError(
+                f"base_url must use HTTPS (got {url!r}). "
+                "HTTP is only allowed for localhost/127.0.0.1 during development."
+            )
 
     def _setup_x402(self, wallet_private_key: str):
         """Set up x402 auto-payment client. Does not store the raw key."""
