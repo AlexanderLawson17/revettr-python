@@ -6,15 +6,21 @@
     "url": "https://github.com/AlexanderLawson17/revettr-python",
     "source": "github"
   },
-  "version": "0.2.2",
+  "version": "0.2.3",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "revettr",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "transport": {
         "type": "stdio"
       }
+    }
+  ],
+  "remotes": [
+    {
+      "transportType": "streamable-http",
+      "url": "https://revettr.com/mcp"
     }
   ]
 }
