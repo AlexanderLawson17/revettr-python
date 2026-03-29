@@ -10,3 +10,4 @@ build/
 .claude/
 .mcpregistry_*
 .smithery/
+.venv/
