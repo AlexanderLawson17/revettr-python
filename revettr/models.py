@@ -24,8 +24,10 @@ class ScoreResponse:
     @classmethod
     def from_dict(cls, data: dict) -> "ScoreResponse":
         signal_scores = {}
+        _valid_fields = {f.name for f in SignalScore.__dataclass_fields__.values()}
         for key, val in data.get("signal_scores", {}).items():
-            signal_scores[key] = SignalScore(**val)
+            filtered = {k: v for k, v in val.items() if k in _valid_fields}
+            signal_scores[key] = SignalScore(**filtered)
         return cls(
             score=data["score"],
             tier=data["tier"],

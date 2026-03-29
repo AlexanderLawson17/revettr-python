@@ -31,4 +31,5 @@ if __name__ == "__main__":
             "authenticating reverse proxy that validates the bearer token."
         )
 
-    mcp.run(transport="streamable-http", host="0.0.0.0", port=port)
+    host = os.getenv("MCP_HOST", "127.0.0.1")
+    mcp.run(transport="streamable-http", host=host, port=port)

@@ -22,7 +22,10 @@ def _validate_url(url: str) -> None:
 
     parsed = urlparse(url)
     hostname = parsed.hostname or ""
-    is_local = hostname in ("localhost", "127.0.0.1") or hostname.startswith("127.")
+    try:
+        is_local = hostname in ("localhost",) or ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        is_local = False
     if not is_local and not url.startswith("https://"):
         raise ValueError(
             f"REVETTR_URL must use HTTPS (got {url!r}). "
