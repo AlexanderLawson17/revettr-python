@@ -1,6 +1,8 @@
 <!-- mcp-name: io.github.AlexanderLawson17/revettr-mcp -->
 # Revettr
 
+[![Glama MCP server](https://glama.ai/mcp/servers/AlexanderLawson17/revettr-python/badges/card.svg)](https://glama.ai/mcp/servers/AlexanderLawson17/revettr-python)
+
 Counterparty risk scoring for agentic commerce. One API call answers: **"Should this agent send money to this counterparty?"**
 
 Revettr scores counterparties by analyzing domain intelligence, IP reputation, on-chain wallet history, and sanctions lists. It's designed for AI agents transacting via [x402](https://x402.org) on Base.
