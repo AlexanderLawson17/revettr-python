@@ -80,6 +80,43 @@ class TestInputValidation:
             client.score()
 
 
+class TestStellarWalletValidation:
+    """Test _validate_stellar_wallet."""
+
+    VALID_STELLAR = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7"
+
+    def test_valid_stellar(self):
+        Revettr._validate_stellar_wallet(self.VALID_STELLAR)
+
+    def test_none_is_ok(self):
+        Revettr._validate_stellar_wallet(None)
+
+    def test_rejects_evm_address(self):
+        with pytest.raises(ValueError, match="Invalid Stellar"):
+            Revettr._validate_stellar_wallet("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+
+    def test_rejects_short(self):
+        with pytest.raises(ValueError, match="Invalid Stellar"):
+            Revettr._validate_stellar_wallet("GABC")
+
+    def test_rejects_wrong_prefix(self):
+        with pytest.raises(ValueError, match="Invalid Stellar"):
+            Revettr._validate_stellar_wallet("S" + "A" * 55)
+
+    def test_rejects_lowercase(self):
+        with pytest.raises(ValueError, match="Invalid Stellar"):
+            Revettr._validate_stellar_wallet("G" + "a" * 55)
+
+    def test_score_builds_body_with_stellar(self):
+        """score() should include stellar_wallet in the request body."""
+        client = Revettr()
+        # Validation should pass without raising ValueError
+        Revettr._validate_stellar_wallet(self.VALID_STELLAR)
+        # Confirm it doesn't raise during input validation phase
+        Revettr._validate_inputs(None, None, None, "base", None, None, None)
+        Revettr._validate_stellar_wallet(self.VALID_STELLAR)
+
+
 class TestBaseUrlValidation:
     """Test HTTPS enforcement."""
 

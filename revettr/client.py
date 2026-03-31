@@ -152,6 +152,16 @@ class Revettr:
             if len(chain) > 50:
                 raise ValueError("chain exceeds 50-character limit")
 
+    @staticmethod
+    def _validate_stellar_wallet(stellar_wallet: str | None) -> None:
+        """Validate Stellar wallet address format."""
+        if stellar_wallet is not None:
+            if not re.match(r"^G[A-Z2-7]{55}$", stellar_wallet):
+                raise ValueError(
+                    f"Invalid Stellar wallet address: {stellar_wallet!r}. "
+                    "Expected format: G followed by 55 base32 characters."
+                )
+
     def score(
         self,
         domain: str | None = None,
@@ -161,6 +171,7 @@ class Revettr:
         company_name: str | None = None,
         email: str | None = None,
         amount: float | None = None,
+        stellar_wallet: str | None = None,
     ) -> ScoreResponse:
         """Score a counterparty. Send whatever data you have.
 
@@ -172,6 +183,7 @@ class Revettr:
             company_name: Name to screen against sanctions lists
             email: Email address (future signal, not yet scored)
             amount: Transaction amount in USD (context only)
+            stellar_wallet: Stellar wallet address (G...)
 
         Returns:
             ScoreResponse with composite score, tier, flags, and per-signal breakdown
@@ -182,6 +194,7 @@ class Revettr:
             ValueError: If any input fails validation
         """
         self._validate_inputs(domain, ip, wallet_address, chain, company_name, email, amount)
+        self._validate_stellar_wallet(stellar_wallet)
 
         # Strip whitespace from string inputs after validation
         if domain is not None:
@@ -204,6 +217,8 @@ class Revettr:
             body["email"] = email
         if amount is not None:
             body["amount"] = amount
+        if stellar_wallet is not None:
+            body["stellar_wallet"] = stellar_wallet
 
         if not body:
             raise ValueError("At least one input field is required")

@@ -53,6 +53,7 @@ async def score_counterparty(
     wallet_address: str | None = None,
     chain: str = "base",
     company_name: str | None = None,
+    stellar_wallet: str | None = None,
 ) -> dict:
     """Score a counterparty before sending money. Returns risk score 0-100.
 
@@ -68,6 +69,7 @@ async def score_counterparty(
         wallet_address: EVM wallet address on Base (e.g., "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
         chain: Blockchain network for wallet analysis (default: "base")
         company_name: Legal name to screen against OFAC/EU/UN sanctions lists
+        stellar_wallet: Stellar wallet address (e.g., "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7")
 
     Returns:
         Risk assessment with score (0-100), tier, confidence, flags, and per-signal breakdown.
@@ -113,6 +115,13 @@ async def score_counterparty(
                 raise ValueError("chain must be a non-empty string")
             if len(chain) > 50:
                 raise ValueError("chain exceeds 50-character limit")
+
+        if stellar_wallet is not None:
+            if not re.match(r"^G[A-Z2-7]{55}$", stellar_wallet):
+                raise ValueError(
+                    f"Invalid Stellar wallet address: {stellar_wallet!r}. "
+                    "Expected format: G followed by 55 base32 characters."
+                )
     except ValueError as e:
         return {"error": str(e)}
 
@@ -127,9 +136,11 @@ async def score_counterparty(
         body["chain"] = chain
     if company_name is not None:
         body["company_name"] = company_name
+    if stellar_wallet is not None:
+        body["stellar_wallet"] = stellar_wallet
 
     if not body:
-        return {"error": "At least one input field is required (domain, ip, wallet_address, or company_name)"}
+        return {"error": "At least one input field is required (domain, ip, wallet_address, stellar_wallet, or company_name)"}
 
     wallet_key = os.getenv("REVETTR_WALLET_KEY")
 

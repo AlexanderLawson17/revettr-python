@@ -7,13 +7,13 @@ include = ["revettr*", "revettr_mcp*"]
 
 [project]
 name = "revettr"
-version = "0.2.3"
+version = "0.3.0"
 description = "Counterparty risk scoring for agentic commerce"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [{name = "L Squared Digital Holdings"}]
-keywords = ["x402", "risk-scoring", "agentic-commerce", "counterparty-risk", "base"]
+keywords = ["x402", "risk-scoring", "agentic-commerce", "counterparty-risk", "base", "stellar"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
