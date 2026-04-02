@@ -265,6 +265,28 @@ class TestScoreBatch:
         assert "error" in result
         assert "missing wallet_address" in result["error"]
 
+    def test_partial_failure(self):
+        """When some wallets score and others error, both buckets are populated."""
+        from revettr_mcp.server import score_batch
+
+        with patch("revettr_mcp.server._score_one", new_callable=AsyncMock) as mock:
+            mock.side_effect = [
+                {"score": 90, "tier": "low", "flags": []},
+                {"error": "API returned status 500"},
+                {"score": 60, "tier": "medium", "flags": ["wallet_age_under_30d"]},
+            ]
+            result = asyncio.run(score_batch(wallets=[
+                {"wallet_address": VALID_WALLET},
+                {"wallet_address": VALID_WALLET_2},
+                {"wallet_address": f"0x{'b' * 40}"},
+            ]))
+            assert result["total_scored"] == 2
+            assert len(result["results"]) == 2
+            assert len(result["errors"]) == 1
+            assert result["errors"][0]["wallet_address"] == VALID_WALLET_2
+            # Results still sorted by score descending
+            assert result["results"][0]["score"] >= result["results"][1]["score"]
+
     def test_max_results_truncation(self):
         from revettr_mcp.server import score_batch
 

@@ -242,27 +242,35 @@ class TestMCPServerValidation:
         assert "253" in result["error"]
 
     def test_defensive_instructions_in_tool_desc(self):
-        """Tool docstring contains defensive text about not fabricating data.
+        """All tools accepting user identifiers must contain defensive text.
 
         Reads the source AST so the test works even when fastmcp is not
-        installed.
+        installed.  Tools that accept user-provided data (wallets, domains,
+        IPs, company names) should instruct the LLM not to fabricate inputs.
+        health_check is exempt — it takes no user identifiers.
         """
+        tools_requiring_defense = [
+            "score_counterparty",
+            "is_safe_to_transact",
+            "score_batch",
+            "explain_risk",
+        ]
+
         source = (_PROJECT_ROOT / "revettr_mcp" / "server.py").read_text()
         tree = ast.parse(source)
 
-        # Find the score_counterparty function and extract its docstring
-        docstring = None
+        found = {}
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if node.name == "score_counterparty":
-                    docstring = ast.get_docstring(node) or ""
-                    break
+                if node.name in tools_requiring_defense:
+                    found[node.name] = ast.get_docstring(node) or ""
 
-        assert docstring is not None, "score_counterparty function not found in server.py"
-        assert "do not fabricate" in docstring.lower(), (
-            "score_counterparty docstring must contain defensive instruction "
-            "about not fabricating input values"
-        )
+        for tool_name in tools_requiring_defense:
+            assert tool_name in found, f"{tool_name} function not found in server.py"
+            assert "do not fabricate" in found[tool_name].lower(), (
+                f"{tool_name} docstring must contain defensive instruction "
+                "about not fabricating input values"
+            )
 
 
 # ---------------------------------------------------------------------------
