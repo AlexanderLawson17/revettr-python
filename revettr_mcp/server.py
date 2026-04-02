@@ -100,7 +100,7 @@ mcp = FastMCP(
         "2. is_safe_to_transact — Quick yes/no safety check for a wallet address "
         "against a configurable score threshold.\n"
         "3. score_batch — Score up to 10 wallets in parallel and return results "
-        "sorted by risk (lowest score first).\n"
+        "sorted by score (highest/safest first).\n"
         "4. explain_risk — Get human-readable explanations of risk flags for a "
         "counterparty, with tier-based recommendations.\n"
         "5. health_check — Check Revettr API availability and signal source status."
@@ -419,6 +419,33 @@ async def explain_risk(
     try:
         if wallet_address is not None:
             _validate_wallet_address(wallet_address)
+
+        if domain is not None:
+            if not isinstance(domain, str):
+                raise ValueError("domain must be a string")
+            domain = domain.strip()
+            hostname = domain
+            if "://" in domain:
+                from urllib.parse import urlparse
+                parsed = urlparse(domain)
+                hostname = parsed.hostname or domain
+            if len(hostname) > 253:
+                raise ValueError("domain hostname exceeds 253-character DNS limit")
+            if re.search(r"\s", domain):
+                raise ValueError("domain must not contain whitespace")
+
+        if ip is not None:
+            try:
+                ipaddress.ip_address(ip)
+            except ValueError:
+                raise ValueError(f"Invalid IP address: {ip!r}")
+
+        if company_name is not None:
+            if not isinstance(company_name, str):
+                raise ValueError("company_name must be a string")
+            company_name = company_name.strip()
+            if len(company_name) > 200:
+                raise ValueError("company_name exceeds 200-character limit")
     except ValueError as e:
         return {"error": str(e)}
 
@@ -548,16 +575,21 @@ async def _call_with_x402_payment(body: dict, wallet_key: str) -> dict:
 
 async def _call_direct(body: dict) -> dict:
     """Call Revettr API without payment (will get 402 if payment required)."""
-    async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
-        response = await client.post(f"{REVETTR_URL}/v1/score", json=body)
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
+            response = await client.post(f"{REVETTR_URL}/v1/score", json=body)
 
-        if response.status_code == 200:
-            return response.json()
-        elif response.status_code == 402:
-            return {
-                "error": "Payment required. Set REVETTR_WALLET_KEY environment variable with a funded Base wallet private key.",
-                "docs": "https://revettr.com/docs",
-                "pricing": "$0.01 USDC per request via x402 on Base",
-            }
-        else:
-            return {"error": f"API returned status {response.status_code}"}
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 402:
+                return {
+                    "error": "Payment required. Set REVETTR_WALLET_KEY environment variable with a funded Base wallet private key.",
+                    "docs": "https://revettr.com/docs",
+                    "pricing": "$0.01 USDC per request via x402 on Base",
+                }
+            else:
+                return {"error": f"API returned status {response.status_code}"}
+    except httpx.TimeoutException:
+        return {"error": "Request timed out (30s)"}
+    except Exception:
+        return {"error": "Request failed — an unexpected error occurred"}
