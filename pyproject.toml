@@ -7,7 +7,7 @@ include = ["revettr*", "revettr_mcp*"]
 
 [project]
 name = "revettr"
-version = "0.3.0"
+version = "0.4.0"
 description = "Counterparty risk scoring for agentic commerce"
 readme = "README.md"
 license = "MIT"
