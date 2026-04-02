@@ -50,14 +50,6 @@ class TestURLValidation:
         with pytest.raises(ValueError, match="HTTPS"):
             Revettr(base_url="http://example.com")
 
-    @pytest.mark.xfail(
-        reason=(
-            "Known vulnerability: hostname.startswith('127.') matches "
-            "127.0.0.1.evil.com. Tracked for fix — the check should verify "
-            "the hostname is a real loopback IP, not just a prefix match."
-        ),
-        strict=True,
-    )
     def test_127_subdomain_rejected(self):
         """http://127.0.0.1.evil.com must not be treated as localhost."""
         with pytest.raises(ValueError, match="HTTPS"):
@@ -91,10 +83,6 @@ class TestURLValidation:
         _validate_url("http://127.0.0.1:8000")
 
     @pytest.mark.skipif(not _fastmcp_available(), reason="fastmcp not installed")
-    @pytest.mark.xfail(
-        reason="Same startswith('127.') vulnerability as client _validate_base_url",
-        strict=True,
-    )
     def test_mcp_validate_url_127_subdomain_rejected(self):
         from revettr_mcp.server import _validate_url
         with pytest.raises(ValueError, match="HTTPS"):
