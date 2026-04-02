@@ -26,12 +26,10 @@ classifiers = [
 ]
 dependencies = [
     "httpx>=0.28.0",
+    "fastmcp>=3.0.0",
 ]
 
 [project.optional-dependencies]
-mcp = [
-    "fastmcp>=3.0.0",
-]
 x402 = [
     "x402[httpx,evm]>=2.5.0",
 ]
